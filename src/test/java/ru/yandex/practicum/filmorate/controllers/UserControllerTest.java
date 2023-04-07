@@ -2,15 +2,25 @@ package ru.yandex.practicum.filmorate.controllers;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.verify;
 
+@ExtendWith(MockitoExtension.class)
 class UserControllerTest {
 
     private static final User PREDEFINED_USER =
@@ -22,11 +32,17 @@ class UserControllerTest {
     private static final String LOGIN_CONTAINS_SPACES_VALIDATION_ERR = "Login should not have spaces";
     private static final String BIRTHDAY_IN_tHE_FUTURE_VALIDATION_ERR = "Birthday cannot be in the future";
 
+    @Mock
+    UserStorage userStorage;
+
+    @Captor
+    ArgumentCaptor<User> userCaptor;
+
+    @InjectMocks
     private UserController userController;
 
     @BeforeEach
     void init() {
-        userController = new UserController();
         userController.createUser(PREDEFINED_USER);
     }
 
@@ -89,9 +105,13 @@ class UserControllerTest {
 
     @Test
     void createUserNameEqualsLoginWhenNameWasBlank() {
-        User user = new User("email@gmail.com", "login", "", LocalDate.of(2020, 1, 1));
-        Long id = userController.createUser(user).getBody().getId();
-        boolean nameEqualsLogin = userController.getUsers().toString().contains("name=login");
+        String loginValue = "login";
+        User user = new User("email@gmail.com", loginValue, "", LocalDate.of(2020, 1, 1));
+        userController.createUser(user);
+        verify(userStorage, atLeastOnce()).addUser(userCaptor.capture());
+        User actualUser = userCaptor.getValue();
+
+        boolean nameEqualsLogin = actualUser.getName().equals(loginValue);
         assertTrue(nameEqualsLogin);
     }
 
@@ -167,11 +187,12 @@ class UserControllerTest {
 
     @Test
     void updateUserNameEqualsLoginWhenNameWasBlank() {
-        User user = new User("email@gmail.com", "login", "", LocalDate.of(2020, 1, 1));
+        String login = "login";
+        User user = new User("email@gmail.com", login, "", LocalDate.of(2020, 1, 1));
         user.setId(1L);
-        Long id = userController.updateUser(user).getBody().getId();
-        boolean nameEqualsLogin = userController.getUsers().toString().contains("name=login");
-        assertTrue(nameEqualsLogin);
+        userController.updateUser(user);
+
+        assertEquals(user.getName(), user.getLogin());
     }
 
     @Test
@@ -180,9 +201,7 @@ class UserControllerTest {
         User user = new User("email@gmail.com", login, "Vasya", LocalDate.of(2020, 1, 1));
         user.setId(1L);
         userController.updateUser(user);
-
-        String actualLogin = userController.getUsers().getBody().get(0).getLogin();
-        assertEquals(login, actualLogin);
+        verify(userStorage).updateUser(user);
     }
 
     //*****Get Users Tests******//
@@ -191,8 +210,7 @@ class UserControllerTest {
     void getUsersWorksWithoutErrors() {
         List<User> expected = new ArrayList<>(List.of(PREDEFINED_USER));
 
-        List<User> actual = userController.getUsers().getBody();
-
-        assertEquals(expected, actual);
+        userController.getUsers().getBody();
+        verify(userStorage).getAllUsers();
     }
 }

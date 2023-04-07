@@ -2,15 +2,23 @@ package ru.yandex.practicum.filmorate.controllers;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class FilmControllerTest {
 
     private static final String TO_LONG_DESCRIPTION_VALIDATION_ERROR_MSG = "Film description length should be less than 200 symbols";
@@ -22,19 +30,25 @@ class FilmControllerTest {
     private static final Film PREDEFINED_FILM = new Film("Predefined film name", "Predefined film description", LocalDate.now(), 90L);
     private static final LocalDate NOT_VALID_DATE = LocalDate.of(1895, 12, 27);
 
+    @Mock
+//    @Spy
+    private FilmStorage filmStorage;
+
+    @InjectMocks
     private FilmController filmController;
 
     @BeforeEach
     void init() {
-        filmController = new FilmController();
-        filmController.addFilm(PREDEFINED_FILM);
+
     }
 
     //*****Add Film Tests******//
 
     @Test
     void addFilmShouldThrowWhenFilmNameIsEmpty() {
-        Film film = new Film("", "description", LocalDate.now(),90L);
+
+        Film film = new Film("", "description", LocalDate.now(), 90L);
+//        when(filmStorage.addFilm(film)).thenThrow(new ValidationException())
         Exception exception = assertThrows(ValidationException.class, () -> {
             filmController.addFilm(film);
         });
@@ -45,7 +59,7 @@ class FilmControllerTest {
 
     @Test
     void addFilmShouldThrowWhenDescriptionNameExceeds200() {
-        Film film = new Film("name", NOT_VALID_FILM_DESCRIPTION, LocalDate.now(),90L);
+        Film film = new Film("name", NOT_VALID_FILM_DESCRIPTION, LocalDate.now(), 90L);
         Exception exception = assertThrows(ValidationException.class, () -> {
             filmController.addFilm(film);
         });
@@ -56,7 +70,7 @@ class FilmControllerTest {
 
     @Test
     void addFilmShouldThrowWhenReleaseDateIsBeforeGivenDate() {
-        Film film = new Film("name", "description", NOT_VALID_DATE,90L);
+        Film film = new Film("name", "description", NOT_VALID_DATE, 90L);
         Exception exception = assertThrows(ValidationException.class, () -> {
             filmController.addFilm(film);
         });
@@ -80,18 +94,15 @@ class FilmControllerTest {
     void addFilmWorksWithoutErrors() {
         String name = "name";
         Film film = new Film(name, "description", LocalDate.now(), 90L);
-        Long id = filmController.addFilm(film).getBody().getId();
-
-        Long actualId = filmController.getFilms().getBody().get(1).getId();
-        String actualName = filmController.getFilms().getBody().get(1).getName();
-        assertEquals(id, actualId);
-        assertEquals(name, actualName);
+        filmController.addFilm(film);
+        verify(filmStorage).addFilm(film);
     }
 
     //*****Update Film Tests******//
     @Test
     void updateFilmShouldThrowWhenFilmNameIsEmpty() {
-        Film film = new Film(1L,"", "description", LocalDate.now(),90L);
+        Film film = new Film("", "description", LocalDate.now(), 90L);
+        film.setId(1L);
         Exception exception = assertThrows(ValidationException.class, () -> {
             filmController.updateFilm(film);
         });
@@ -103,7 +114,8 @@ class FilmControllerTest {
 
     @Test
     void updateFilmShouldThrowWhenDescriptionNameExceeds200() {
-        Film film = new Film(1L, "name", NOT_VALID_FILM_DESCRIPTION, LocalDate.now(),90L);
+        Film film = new Film("name", NOT_VALID_FILM_DESCRIPTION, LocalDate.now(), 90L);
+        film.setId(1L);
 
         Exception exception = assertThrows(ValidationException.class, () -> {
             filmController.updateFilm(film);
@@ -116,8 +128,8 @@ class FilmControllerTest {
 
     @Test
     void updateFilmShouldThrowWhenReleaseDateIsBeforeGivenDate() {
-        Film film = new Film(1L, "name", "description", NOT_VALID_DATE,90L);
-
+        Film film = new Film("name", "description", NOT_VALID_DATE, 90L);
+        film.setId(1L);
         Exception exception = assertThrows(ValidationException.class, () -> {
             filmController.updateFilm(film);
         });
@@ -129,8 +141,8 @@ class FilmControllerTest {
 
     @Test
     void updateFilmShouldThrowWhenFilmDurationIsNegative() {
-        Film film = new Film(1L, "name", "description", LocalDate.now(), NOT_VALID_FILM_DURATION);
-
+        Film film = new Film("name", "description", LocalDate.now(), NOT_VALID_FILM_DURATION);
+        film.setId(1L);
         Exception exception = assertThrows(ValidationException.class, () -> {
             filmController.updateFilm(film);
         });
@@ -143,11 +155,10 @@ class FilmControllerTest {
     @Test
     void updateFilmWorksWithoutErrors() {
         String name = "name";
-        Film film = new Film(1L ,name, "description", LocalDate.now(), 90L);
+        Film film = new Film(name, "description", LocalDate.now(), 90L);
+        film.setId(1L);
         filmController.updateFilm(film);
-
-        String actualName = filmController.getFilms().getBody().get(0).getName();
-        assertEquals(name, actualName);
+        verify(filmStorage).updateFilm(film);
     }
 
     //*****Get Films Tests******//
@@ -155,7 +166,7 @@ class FilmControllerTest {
     @Test
     void getFilmsWorksWithoutErrors() {
         List<Film> expected = new ArrayList<>(List.of(PREDEFINED_FILM));
-
+        when(filmStorage.getAllFilms()).thenReturn(expected);
         List<Film> actual = filmController.getFilms().getBody();
 
         assertEquals(expected, actual);
