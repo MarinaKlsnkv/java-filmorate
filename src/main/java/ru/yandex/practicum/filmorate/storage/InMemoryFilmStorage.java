@@ -49,4 +49,9 @@ public class InMemoryFilmStorage implements FilmStorage {
         }
         return film;
     }
+
+    @Override
+    public Film updateFilmLikes(Film film) {
+        throw new UnsupportedOperationException();
+    }
 }
