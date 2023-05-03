@@ -1,7 +1,7 @@
 package ru.yandex.practicum.filmorate.controllers;
 
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,11 +25,16 @@ import java.util.List;
 @RestController
 @RequestMapping("/films")
 @Slf4j
-@AllArgsConstructor
 public class FilmController {
 
     private final FilmStorage filmStorage;
     private final FilmService filmService;
+
+
+    public FilmController(@Qualifier("filmDbStorage") FilmStorage filmStorage, FilmService filmService) {
+        this.filmStorage = filmStorage;
+        this.filmService = filmService;
+    }
 
     @PostMapping
     public ResponseEntity<Film> addFilm(@RequestBody Film film) {
