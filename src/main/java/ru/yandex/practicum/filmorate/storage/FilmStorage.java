@@ -14,4 +14,6 @@ public interface FilmStorage {
 
     Film getById(Long id);
 
+    Film updateFilmLikes(Film film);
+
 }

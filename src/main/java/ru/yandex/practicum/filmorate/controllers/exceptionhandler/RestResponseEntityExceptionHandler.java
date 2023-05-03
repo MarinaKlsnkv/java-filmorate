@@ -7,9 +7,12 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import ru.yandex.practicum.filmorate.exceptions.AlreadyFriendsException;
 import ru.yandex.practicum.filmorate.exceptions.DeleteLikeFilmException;
 import ru.yandex.practicum.filmorate.exceptions.FilmNotFoundException;
+import ru.yandex.practicum.filmorate.exceptions.GenreNotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.LikeFilmException;
+import ru.yandex.practicum.filmorate.exceptions.MpaNotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.UserNotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 
@@ -17,7 +20,8 @@ import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(value
-            = {UserNotFoundException.class, FilmNotFoundException.class})
+            = {UserNotFoundException.class, FilmNotFoundException.class, GenreNotFoundException.class,
+            MpaNotFoundException.class})
     protected ResponseEntity<Object> handleNotFound(
             RuntimeException ex, WebRequest request) {
         ErrorResponse bodyOfResponse = new ErrorResponse("Resource not found");
@@ -51,6 +55,16 @@ public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionH
     protected ResponseEntity<Object> handleCannotDeleteLikeFromUnlikedFilm(
             RuntimeException ex, WebRequest request) {
         ErrorResponse bodyOfResponse = new ErrorResponse("This film was not liked by the user. Like was not removed");
+
+        return handleExceptionInternal(ex, bodyOfResponse,
+                new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+    }
+
+    @ExceptionHandler(value
+            = {AlreadyFriendsException.class})
+    protected ResponseEntity<Object> handleAlreadyFriends(
+            RuntimeException ex, WebRequest request) {
+        ErrorResponse bodyOfResponse = new ErrorResponse("Already in friend list");
 
         return handleExceptionInternal(ex, bodyOfResponse,
                 new HttpHeaders(), HttpStatus.BAD_REQUEST, request);

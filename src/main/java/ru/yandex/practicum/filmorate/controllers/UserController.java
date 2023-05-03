@@ -1,7 +1,7 @@
 package ru.yandex.practicum.filmorate.controllers;
 
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,11 +24,15 @@ import java.util.List;
 @RestController
 @RequestMapping("/users")
 @Slf4j
-@AllArgsConstructor
 public class UserController {
 
     private UserStorage userStorage;
     private UserService userService;
+
+    public UserController(@Qualifier("userDbStorage") UserStorage userStorage, UserService userService) {
+        this.userStorage = userStorage;
+        this.userService = userService;
+    }
 
     @PostMapping
     public ResponseEntity<User> createUser(@RequestBody User user) {
@@ -77,7 +81,7 @@ public class UserController {
     @DeleteMapping("/{id}/friends/{friendId}")
     public ResponseEntity<String> deleteFriend(@PathVariable Long id, @PathVariable Long friendId) {
         userService.deleteFriend(id, friendId);
-        return ResponseEntity.ok("Friend was added");
+        return ResponseEntity.ok("Friend was deleted");
     }
 
     @GetMapping("{id}/friends")
