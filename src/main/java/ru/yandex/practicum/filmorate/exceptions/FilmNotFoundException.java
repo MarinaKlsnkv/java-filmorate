@@ -5,4 +5,8 @@ public class FilmNotFoundException extends RuntimeException {
         super(errorMessage);
     }
 
+    public FilmNotFoundException(String errorMessage, Throwable cause) {
+        super(errorMessage, cause);
+    }
+
 }

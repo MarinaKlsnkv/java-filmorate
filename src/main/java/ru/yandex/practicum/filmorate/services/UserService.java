@@ -1,10 +1,13 @@
 package ru.yandex.practicum.filmorate.services;
 
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exceptions.AlreadyFriendsException;
 import ru.yandex.practicum.filmorate.exceptions.UserNotFoundException;
+import ru.yandex.practicum.filmorate.model.Friendship;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.FriendshipStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.List;
@@ -12,10 +15,16 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-@AllArgsConstructor
 public class UserService {
 
-    private UserStorage userStorage;
+    private final UserStorage userStorage;
+    private final FriendshipStorage friendshipStorage;
+
+    public UserService(@Qualifier("userDbStorage") UserStorage userStorage,
+                       FriendshipStorage friendshipStorage) {
+        this.userStorage = userStorage;
+        this.friendshipStorage = friendshipStorage;
+    }
 
     public void addFriend(Long id, Long friendId) {
         User user = userStorage.getById(id);
@@ -23,8 +32,24 @@ public class UserService {
         if (user == null || friend == null) {
             throw new UserNotFoundException("User not found");
         }
-        user.getFriends().add(friendId);
-        friend.getFriends().add(id);
+        boolean alreadyFriend = user.getFriends().stream().anyMatch((friendship) ->
+                friendship.getFriendId().equals(friendId));
+        if (alreadyFriend) {
+            throw new AlreadyFriendsException("Already in friend list");
+        }
+
+        Friendship friendshipOfFriend = friend.getFriends().stream()
+                .filter(fr -> fr.getFriendId().equals(id))
+                .findFirst()
+                .orElse(null);
+        boolean confirmed = false;
+        if (friendshipOfFriend != null) {
+            confirmed = true;
+            friendshipOfFriend.setConfirmed(confirmed);
+        }
+        friendshipStorage.addFriendship(new Friendship(id, friendId, confirmed));
+
+        user.getFriends().add(new Friendship(id, friendId, confirmed));
     }
 
     public void deleteFriend(Long id, Long friendId) {
@@ -33,8 +58,9 @@ public class UserService {
         if (user == null || friend == null) {
             throw new UserNotFoundException("User not found");
         }
-        user.getFriends().remove(friendId);
-        friend.getFriends().remove(id);
+
+        friendshipStorage.deleteFriendship(id, friendId);
+        friendshipStorage.updateConfirmedStatusByUserAndFriendIds(friendId, id, false);
     }
 
     public List<User> getFriends(Long id) {
@@ -42,11 +68,11 @@ public class UserService {
         if (user == null) {
             throw new UserNotFoundException("User with id = " + id + " not found");
         }
-        return user.getFriends().stream()
-                .map((friendId) -> userStorage.getById(friendId))
+
+        return friendshipStorage.findFriendsByUserId(id).stream()
+                .map((friendship) -> userStorage.getById(friendship.getFriendId()))
                 .collect(Collectors.toList());
     }
-
 
     public List<User> getCommonFriends(Long id, Long anotherId) {
         User user = userStorage.getById(id);
@@ -57,15 +83,17 @@ public class UserService {
         if (anotherUser == null) {
             throw new UserNotFoundException("User with id = " + anotherId + " not found");
         }
+
         List<User> userFriends = user.getFriends().stream()
-                .map((friendId) -> userStorage.getById(friendId))
+                .map((friendship) -> userStorage.getById(friendship.getFriendId()))
                 .collect(Collectors.toList());
 
         List<User> anotherUserFriends = anotherUser.getFriends().stream()
-                .map((friendId) -> userStorage.getById(friendId))
+                .map((friendship) -> userStorage.getById(friendship.getFriendId()))
                 .collect(Collectors.toList());
 
         userFriends.retainAll(anotherUserFriends);
         return userFriends;
     }
+
 }
