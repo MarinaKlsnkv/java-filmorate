@@ -8,7 +8,7 @@ import ru.yandex.practicum.filmorate.exceptions.LikeFilmException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.FilmLike;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.FilmLikeDAO;
+import ru.yandex.practicum.filmorate.storage.FilmLikeStorage;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
@@ -22,14 +22,14 @@ public class FilmService {
 
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
-    private final FilmLikeDAO filmLikeDAO;
+    private final FilmLikeStorage filmLikeStorage;
 
     public FilmService(@Qualifier("filmDbStorage") FilmStorage filmStorage,
                        @Qualifier("userDbStorage") UserStorage userStorage,
-                       FilmLikeDAO filmLikeDAO) {
+                       FilmLikeStorage filmLikeStorage) {
         this.filmStorage = filmStorage;
         this.userStorage = userStorage;
-        this.filmLikeDAO = filmLikeDAO;
+        this.filmLikeStorage = filmLikeStorage;
     }
 
     public void likeFilm(Long id, Long userId) {
@@ -44,7 +44,7 @@ public class FilmService {
         Long likes = film.getRate() + 1;
         film.setRate(likes);
         filmStorage.updateFilmLikes(film);
-        filmLikeDAO.addLike(new FilmLike(userId, id));
+        filmLikeStorage.addLike(new FilmLike(userId, id));
         user.getLikedFilms().add(id);
         userStorage.updateUser(user);
 

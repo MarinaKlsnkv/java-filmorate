@@ -25,13 +25,13 @@ public class UserDbStorage implements UserStorage {
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     private final JdbcTemplate jdbcTemplate;
-    private final FriendshipDAO friendshipDAO;
-    private final FilmLikeDAO filmLikeDAO;
+    private final FriendshipStorage friendshipStorage;
+    private final FilmLikeStorage filmLikeStorage;
 
-    public UserDbStorage(JdbcTemplate jdbcTemplate, FriendshipDAO friendshipDAO, FilmLikeDAO filmLikeDAO) {
+    public UserDbStorage(JdbcTemplate jdbcTemplate, FriendshipStorage friendshipStorage, FilmLikeStorage filmLikeStorage) {
         this.jdbcTemplate = jdbcTemplate;
-        this.friendshipDAO = friendshipDAO;
-        this.filmLikeDAO = filmLikeDAO;
+        this.friendshipStorage = friendshipStorage;
+        this.filmLikeStorage = filmLikeStorage;
     }
 
     @Override
@@ -73,9 +73,9 @@ public class UserDbStorage implements UserStorage {
             String sqlQuery = "select id, email, login, name, birthday " +
                     "from users where id = ?";
             User user = jdbcTemplate.queryForObject(sqlQuery, this::mapRowToUser, id);
-            List<Friendship> allFriendships = friendshipDAO.findFriendsByUserId(id);
+            List<Friendship> allFriendships = friendshipStorage.findFriendsByUserId(id);
             user.getFriends().addAll(allFriendships);
-            List<FilmLike> likes = filmLikeDAO.findByUserId(id);
+            List<FilmLike> likes = filmLikeStorage.findByUserId(id);
             Set<Long> likedFilmsIds = likes.stream().map(l -> l.getFilmId()).collect(Collectors.toSet());
             user.getLikedFilms().addAll(likedFilmsIds);
             return user;

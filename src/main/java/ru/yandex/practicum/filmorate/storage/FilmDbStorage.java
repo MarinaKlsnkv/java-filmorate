@@ -126,7 +126,7 @@ public class FilmDbStorage implements FilmStorage {
                     "left join mpa_rating on films.mpa_id = mpa_rating.id where films.id = ?";
             return jdbcTemplate.queryForObject(sqlQuery, this::mapRowToFilmJoinMpa, id);
         } catch (Exception e) {
-            log.error("Film not found. Cause : {}", e);
+            log.error("Film not found. Cause : ", e);
             throw new FilmNotFoundException("Film with id = " + id + " not found", e);
         }
     }
@@ -149,18 +149,6 @@ public class FilmDbStorage implements FilmStorage {
                 new MpaRating(ratingId, ratingName));
         film.getGenres().addAll(genres);
         return film;
-    }
-
-    private Film mapRowToFilm(ResultSet resultSet, int rowNum) throws SQLException {
-        //todo add genres and mpa
-        //todo likes?
-
-        return new Film(
-                resultSet.getLong("id"),
-                resultSet.getString("name"),
-                resultSet.getString("description"),
-                LocalDate.parse(resultSet.getString("releaseDate"), dateFormatter),
-                resultSet.getLong("duration"));
     }
 
     private Long simpleSave(Film film) {

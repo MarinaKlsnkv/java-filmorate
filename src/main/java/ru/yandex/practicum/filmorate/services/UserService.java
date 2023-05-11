@@ -7,7 +7,7 @@ import ru.yandex.practicum.filmorate.exceptions.AlreadyFriendsException;
 import ru.yandex.practicum.filmorate.exceptions.UserNotFoundException;
 import ru.yandex.practicum.filmorate.model.Friendship;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.FriendshipDAO;
+import ru.yandex.practicum.filmorate.storage.FriendshipStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.List;
@@ -18,12 +18,12 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserStorage userStorage;
-    private final FriendshipDAO friendshipDAO;
+    private final FriendshipStorage friendshipStorage;
 
     public UserService(@Qualifier("userDbStorage") UserStorage userStorage,
-                       FriendshipDAO friendshipDAO) {
+                       FriendshipStorage friendshipStorage) {
         this.userStorage = userStorage;
-        this.friendshipDAO = friendshipDAO;
+        this.friendshipStorage = friendshipStorage;
     }
 
     public void addFriend(Long id, Long friendId) {
@@ -47,7 +47,7 @@ public class UserService {
             confirmed = true;
             friendshipOfFriend.setConfirmed(confirmed);
         }
-        friendshipDAO.addFriendship(new Friendship(id, friendId, confirmed));
+        friendshipStorage.addFriendship(new Friendship(id, friendId, confirmed));
 
         user.getFriends().add(new Friendship(id, friendId, confirmed));
     }
@@ -59,8 +59,8 @@ public class UserService {
             throw new UserNotFoundException("User not found");
         }
 
-        friendshipDAO.deleteFriendship(id, friendId);
-        friendshipDAO.updateConfirmedStatusByUserAndFriendIds(friendId, id, false);
+        friendshipStorage.deleteFriendship(id, friendId);
+        friendshipStorage.updateConfirmedStatusByUserAndFriendIds(friendId, id, false);
     }
 
     public List<User> getFriends(Long id) {
@@ -69,7 +69,7 @@ public class UserService {
             throw new UserNotFoundException("User with id = " + id + " not found");
         }
 
-        return friendshipDAO.findFriendsByUserId(id).stream()
+        return friendshipStorage.findFriendsByUserId(id).stream()
                 .map((friendship) -> userStorage.getById(friendship.getFriendId()))
                 .collect(Collectors.toList());
     }

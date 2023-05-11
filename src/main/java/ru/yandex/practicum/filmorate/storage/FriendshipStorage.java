@@ -2,7 +2,6 @@ package ru.yandex.practicum.filmorate.storage;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.Friendship;
@@ -14,38 +13,39 @@ import java.util.List;
 
 @Repository
 @Slf4j
-public class FriendshipDAO {
+public class FriendshipStorage {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public FriendshipDAO(JdbcTemplate jdbcTemplate) {
+    public FriendshipStorage(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
     public List<Friendship> findFriendsByUserId(Long userId) {
         String sql = "SELECT * FROM friendship WHERE user_id = ?";
-        return jdbcTemplate.query(sql, new Object[]{userId}, new FriendshipRowMapper());
-    }
-
-    public Friendship findByUserAndFriendIds(Long userId, Long friendId) {
-        String sql = "SELECT * FROM friendship WHERE user_id = ? AND friend_id = ?";
-        return jdbcTemplate.queryForObject(sql, new Object[]{userId, friendId}, new FriendshipRowMapper());
-    }
-
-    public void updateConfirmedStatusByUserAndFriendIds(Long userId, Long friendId, boolean confirmed) {
-        String sql = "UPDATE friendship SET confirmed = ? WHERE user_id = ? AND friend_id = ?";
-        jdbcTemplate.update(sql, confirmed, userId, friendId);
-    }
-
-    private static class FriendshipRowMapper implements RowMapper<Friendship> {
-        @Override
-        public Friendship mapRow(ResultSet rs, int rowNum) throws SQLException {
+        return jdbcTemplate.query(sql, new Object[]{userId}, (rs, rowNum) -> {
             Friendship friendship = new Friendship();
             friendship.setUserId(rs.getLong("user_id"));
             friendship.setFriendId(rs.getLong("friend_id"));
             friendship.setConfirmed(rs.getBoolean("confirmed"));
             return friendship;
-        }
+        });
+    }
+
+    public Friendship findByUserAndFriendIds(Long userId, Long friendId) {
+        String sql = "SELECT * FROM friendship WHERE user_id = ? AND friend_id = ?";
+        return jdbcTemplate.queryForObject(sql, new Object[]{userId, friendId}, (rs, rowNum) -> {
+            Friendship friendship = new Friendship();
+            friendship.setUserId(rs.getLong("user_id"));
+            friendship.setFriendId(rs.getLong("friend_id"));
+            friendship.setConfirmed(rs.getBoolean("confirmed"));
+            return friendship;
+        });
+    }
+
+    public void updateConfirmedStatusByUserAndFriendIds(Long userId, Long friendId, boolean confirmed) {
+        String sql = "UPDATE friendship SET confirmed = ? WHERE user_id = ? AND friend_id = ?";
+        jdbcTemplate.update(sql, confirmed, userId, friendId);
     }
 
     private Friendship mapRowToFriendship(ResultSet resultSet, int rowNum) throws SQLException {

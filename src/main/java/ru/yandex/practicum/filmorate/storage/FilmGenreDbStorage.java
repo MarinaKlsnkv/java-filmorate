@@ -2,15 +2,9 @@ package ru.yandex.practicum.filmorate.storage;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.FilmGenre;
-import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.utils.UserUtils;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 
 @Repository
@@ -67,26 +61,4 @@ public class FilmGenreDbStorage implements FilmGenreStorage {
         }
     }
 
-    private static class FilmGenreRowMapper implements RowMapper<FilmGenre> {
-        @Override
-        public FilmGenre mapRow(ResultSet rs, int rowNum) throws SQLException {
-            FilmGenre filmGenre = new FilmGenre();
-            filmGenre.setFilmId(rs.getLong("film_id"));
-            filmGenre.setGenreId(rs.getLong("genre_id"));
-            return filmGenre;
-        }
-    }
-
-    private FilmGenre mapRowToFilmGenre(ResultSet resultSet, int rowNum) throws SQLException {
-        return new FilmGenre(
-                resultSet.getLong("film_id"),
-                resultSet.getLong("genre_id"));
-    }
-
-    private Long simpleSave(User user) {
-        SimpleJdbcInsert simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
-                .withTableName("users")
-                .usingGeneratedKeyColumns("id");
-        return simpleJdbcInsert.executeAndReturnKey(UserUtils.userToMap(user)).longValue();
-    }
 }

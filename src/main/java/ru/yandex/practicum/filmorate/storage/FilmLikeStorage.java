@@ -2,7 +2,6 @@ package ru.yandex.practicum.filmorate.storage;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.FilmLike;
 import ru.yandex.practicum.filmorate.model.Friendship;
@@ -13,27 +12,22 @@ import java.util.List;
 
 @Repository
 @Slf4j
-public class FilmLikeDAO {
+public class FilmLikeStorage {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public FilmLikeDAO(JdbcTemplate jdbcTemplate) {
+    public FilmLikeStorage(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
     public List<FilmLike> findByUserId(Long userId) {
         String sql = "SELECT * FROM film_likes WHERE user_id = ?";
-        return jdbcTemplate.query(sql, new Object[]{userId}, new FilmLikesRowMapper());
-    }
-
-    private static class FilmLikesRowMapper implements RowMapper<FilmLike> {
-        @Override
-        public FilmLike mapRow(ResultSet rs, int rowNum) throws SQLException {
+        return jdbcTemplate.query(sql, new Object[]{userId}, (rs, rowNum) -> {
             FilmLike filmLike = new FilmLike();
             filmLike.setUserId(rs.getLong("user_id"));
             filmLike.setFilmId(rs.getLong("film_id"));
             return filmLike;
-        }
+        });
     }
 
     private Friendship mapRowToFriendship(ResultSet resultSet, int rowNum) throws SQLException {
